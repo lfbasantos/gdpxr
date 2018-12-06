@@ -1,8 +1,5 @@
-#
 # 2018 - gpdxr - Greenplum DDL Extractor & Replicator
-# PowerShell Tool for Greenplum Schema Replication
-# by luiz.filipe@remay.com.br / lfbasantos@gmail.com
-#
+PowerShell Tool for Greenplum Schema Replication - by luiz.filipe@remay.com.br / lfbasantos@gmail.com
 
 #
 # 
@@ -11,6 +8,7 @@ Ferramenta PowerShell criada para permitir a troca de compressão de uma tabela 
 # Parametros
 Os parametros devem ser fornecidos entre aspas duplas, para evitar problemas de interpretacao de espacos em branco no powershell.
 O usuario de acesso passado na variavel de conexao 'url' deve ter permissao de uso e leitura e alter table nas tabelas que serao trabalhadas.
+<br>
 A versao atual do script faz o replace de compressao de uma tabela, preservando todas as caracteristicas da DDL original incluindo particao, e realizando a carga dos dados da tabela original para a tabela nova.
 
 #
