@@ -10,7 +10,7 @@ Os parametros devem ser fornecidos entre aspas duplas, para evitar problemas de 
 --pghome: informa o diretorio raiz dos clients greenplum
 <br>Ex.: "--pghome=C:\Program Files (x86)\Greenplum\greenplum-clients-5.8.1\bin" 
 #
-url: informa os dados de conexao com o banco de dados em formato JSON
+--url: informa os dados de conexao com o banco de dados em formato JSON
 <br>Ex.: "--url={'urls':[{'url':'1','user':'emc_luizs', 'pass':'hyr64ljt', 'host':'10.64.78.220', 'port':'5432', 'database':'sf_prd_re', 'schema':'procergs'}]}" 
 #
 --compression: informa a compressao desejada na tabela a ser substituida, json format
