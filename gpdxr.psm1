@@ -87,6 +87,16 @@
 				3035 {$vMsg = "[GDEXREP][${Stamp}]: transfere tabela new para schema origem"}
 				3036 {$vMsg = "[GDEXREP][${Stamp}]: Falha: alter table "}
 				3037 {$vMsg = "[GDEXREP][${Stamp}]: alter table com sucesso"}
+				3038 {$vMsg = "[GDEXREP][${Stamp}]: Processando sql"}
+				3039 {$vMsg = "[GDEXREP][${Stamp}]: Erro processando sql"}
+				3040 {$vMsg = "[GDEXREP][${Stamp}]: SQL processado com sucesso"}
+				30 {$vMsg = "[GDEXREP][${Stamp}]: "}
+				30 {$vMsg = "[GDEXREP][${Stamp}]: "}
+				30 {$vMsg = "[GDEXREP][${Stamp}]: "}
+				30 {$vMsg = "[GDEXREP][${Stamp}]: "}
+				30 {$vMsg = "[GDEXREP][${Stamp}]: "}
+				30 {$vMsg = "[GDEXREP][${Stamp}]: "}
+				30 {$vMsg = "[GDEXREP][${Stamp}]: "}
 				30 {$vMsg = "[GDEXREP][${Stamp}]: "}
                 }
             }
@@ -175,10 +185,13 @@
         Remove-Item -Path cmd.log         -ErrorAction SilentlyContinue
         Remove-Item -Path ddlaux.new.sql  -ErrorAction SilentlyContinue
         Remove-Item -Path ddlaux2.new.sql -ErrorAction SilentlyContinue
+		Remove-Item -Path ddlaux3.new.sql -ErrorAction SilentlyContinue
+		Remove-Item -Path ddlaux4.new.sql -ErrorAction SilentlyContinue
+		Remove-Item -Path ddlaux5.new.sql -ErrorAction SilentlyContinue
+		Remove-Item -Path ddlaux6.new.sql -ErrorAction SilentlyContinue
         Remove-Item -Path alter1.sql      -ErrorAction SilentlyContinue
-        Remove-Item -Path alter2.new.sql  -ErrorAction SilentlyContinue
+        Remove-Item -Path alter2.sql      -ErrorAction SilentlyContinue
     }
-
 
 #
 # VALIDACAO DE SINTAXE PARAMETROS
