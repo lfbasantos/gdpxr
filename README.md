@@ -1,6 +1,7 @@
 # 2018 - gpdxr - Greenplum DDL Extractor & Replicator
 PowerShell Tool for Greenplum Schema Replication - by luiz.filipe@remay.com.br / lfbasantos@gmail.com
 #
+Versão 1.1<br>
 Correções<br>
  - Correção no 'regexp' quando o nome do schema tem '_' underscores<br>
  - Finalizando os erros do script com 'throw' em vez de 'Break' pra possibilitar que um script pai faça try/catch<br>
