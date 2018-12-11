@@ -32,7 +32,7 @@ $vBreakSintaxe = sintaxeParametros
 if ($vBreakSintaxe) {
     sendMsg -a 1 -b 1005
     sendMsg -a 1 -b 102
-    Break
+    Throw "ERR:GPDXR001"
 }
 
 #
@@ -44,7 +44,6 @@ $global:vSchema = varreduraParametros -parametro "--schema" -qtd $args.Count -pa
 if ((varreduraParametros -parametro "--ddlmode" -qtd $args.Count  -pargs $args) -eq "on") { $global:vDDLMode = "--schema-only" } else { $global:vDDLMode="" }
 $global:vWrkSchema = varreduraParametros -parametro "--workarea" -qtd $args.Count  -pargs $args
 $global:vPGHome = varreduraParametros -parametro "--pghome" -qtd $args.Count  -pargs $args
-
 
 #
 # Parametros de Compressao
@@ -97,11 +96,11 @@ if (!$vMode) {
 if ($vBreak) {
     sendMsg -a 1 -b 1005
     sendMsg -a 1 -b 102
-    Break
+    Throw "ERR:GPDXR002"
 }
 
 #
-# CONFIGURA VARIAVEIS DE CONEXAO
+# Configura Variaveis de Conexao
 if ($vDebug -eq 1) { sendMsg -a 1 -b 3000 }
 $env:PGDATABASE = $vDBName
 $env:PGHOST = $vDBHost
@@ -110,9 +109,8 @@ $env:PGUSER = $vDBUser
 $env:PGPORT = $vDBPort
 if ($vDebug -eq 1) { sendMsg -a 1 -b 3001 }
 
-
 #
-# MODO 1 - APENAS EXTRAI SCHEMA
+# Modo 1 - Extracao
 if ($vMode -eq 1) {
     if ($vDebug -eq 1) { sendMsg -a 1 -b 3002 }
     cmd /c $cmdPgdump --table=$vTabela --file=ddl.${vDHRFile}.sql $vDDLMode
@@ -147,6 +145,10 @@ else {
             $vDe = "compresstype=${vTypeFrom}"
             $vPara = "compresstype=${vTypeTo}"
             (Get-Content ddlaux1.sql) -replace "compresstype=([a-z]+)", "$vPara" | Set-Content ddlaux2.sql
+        } elseif($vCheckWith -and !$vCheckComp) {
+        if ($vDebug -eq 1) { sendMsg -a 1 -b 3008 }
+		    $vPara = "WITH (APPENDONLY=TRUE, COMPRESSLEVEL=${vLevelTo}, COMPRESSTYPE=${vTypeTo})"
+            (Get-Content ddl.sql).replace("WITH", $vPara) | Set-Content ddlaux2.sql
         }
     }
 	if ($vDebug -eq 1) { sendMsg -a 1 -b 3010 }
@@ -174,10 +176,24 @@ else {
 	# Atribui schema de trabalho ao arquivo de DDL
 	if ($vDebug -eq 1) { sendMsg -a 1 -b 3014 }
     $vNewSearchPath = "SET search_path = ${vWrkSchema}, "
-    (Get-Content ddlaux.new.sql) -replace "SET search_path = ([a-z]+),", $vNewSearchPath | Set-Content ddlaux2.new.sql
-    $vNewAlterTable = "ALTER TABLE ${vWrkSchema}."
-    (Get-Content ddlaux2.new.sql) -replace "ALTER TABLE ([a-z]+).", $vNewAlterTable | Set-Content ddl.new.sql
-    if ($vDebug -eq 1) { sendMsg -a 1 -b 3015 }
+    (Get-Content ddlaux.new.sql) -replace "SET search_path = ([a-z_]+),", $vNewSearchPath | Set-Content ddlaux2.new.sql
+	
+	$vNewAlterTable = "ALTER TABLE ${vWrkSchema}."
+    (Get-Content ddlaux2.new.sql) -replace "ALTER TABLE ([a-z_]+).", $vNewAlterTable | Set-Content ddlaux3.new.sql
+    
+	$vNewDDL = "TO ${vWrkSchema}_ddl"
+    (Get-Content ddlaux3.new.sql) -replace "TO ([a-z_]+)_ddl", $vNewDDL | Set-Content ddlaux4.new.sql
+
+	$vNewDDL2 = "FROM ${vWrkSchema}_ddl;"
+    (Get-Content ddlaux4.new.sql) -replace "FROM ([a-z_]+)_ddl;", $vNewDDL2 | Set-Content ddlaux5.new.sql
+
+    $vNewDDL3 = "TO ${vWrkSchema}_dataread"
+    (Get-Content ddlaux5.new.sql) -replace "TO ([a-z_]+)_dataread", $vNewDDL3 | Set-Content ddlaux6.new.sql
+
+    $vNewDDL4 = "TO ${vWrkSchema}_datareadwrite"
+    (Get-Content ddlaux6.new.sql) -replace "TO ([a-z_]+)_datareadwrite", $vNewDDL4 | Set-Content ddl.new.sql
+	
+	if ($vDebug -eq 1) { sendMsg -a 1 -b 3015 }
 
     #
     # Aplica estrutura 
@@ -191,18 +207,19 @@ else {
         if ($vChkErr) {
             sendMsg -a 1 -b 3018
             finalizaErro
-        Break
+            Throw "ERR:GPDXR003"
         }
     } catch {
         if ($vDebug -eq 1) {
 		    sendMsg -a 1 -b 3013
             sendMsg -c "Exception Type: $($_.Exception.GetType().FullName)"
 			sendMsg -c "Exception Type: $($_.Exception.GetType().FullName)"
+			Throw "ERR:GPDXR004"
 		} else {
             sendMsg -a 1 -b 3013
         }
 	}
-    if ($vDebug -eq 1) { sendMsg -a 1 -b 3017 }
+    if ( $vDebug -eq 1 ) { sendMsg -a 1 -b 3017 }
 	
     #
     # Carga de dados na tabela replica
@@ -217,7 +234,7 @@ else {
         if ($vChkErr) {
 		    sendMsg -a 1 -b 3020
             finalizaErro
-            Break
+            Throw "ERR:GPDXR005"
         }
     } catch {
         if ($vDebug -eq 1) {
@@ -245,15 +262,17 @@ else {
             if ($vDebug -eq 1) { sendMsg -a 1 -b 3023 }
 			sendMsg -c "${vDBSchm}.${vTabela}"
             finalizaErro
-            Break
+            Throw "ERR:GPDXR006"
         }
     } catch {
         if ($vDebug -eq 1) {
 		    sendMsg -a 1 -b 3013
             sendMsg -c "Exception Type: $($_.Exception.GetType().FullName)"
 			sendMsg -c "Exception Type: $($_.Exception.GetType().FullName)"
+			Throw "ERR:GPDXR007"
 		} else {
             sendMsg -a 1 -b 3013
+			Throw "ERR:GPDXR008"
         }
 	}
     if ($vDebug -eq 1) { sendMsg -a 1 -b 3024 }
@@ -273,15 +292,17 @@ else {
             if ($vDebug -eq 1) { sendMsg -a 1 -b 3023 }
 			sendMsg -c "${vWrkSchema}.${vTabela}_new"
             finalizaErro
-            Break
+            Throw "ERR:GPDXR009"
         }
     } catch {
         if ($vDebug -eq 1) {
 		    sendMsg -a 1 -b 3013
             sendMsg -c "Exception Type: $($_.Exception.GetType().FullName)"
 			sendMsg -c "Exception Type: $($_.Exception.GetType().FullName)"
+			Throw "ERR:GPDXR010"
 		} else {
             sendMsg -a 1 -b 3013
+			Throw "ERR:GPDXR011"
         }
 	}
     if ($vDebug -eq 1) { sendMsg -a 1 -b 3024 }
@@ -292,7 +313,7 @@ else {
     if ($vResult1[2] -ne $vResult2[2]) {
         sendMsg -a 1 -b 1012
 		sendMsg -a 1 -b 1013
-		Break
+		Throw "ERR:GPDXR012"
     } else {
 	    #
 		# Somente prossegue se a validacao de qualidade bater
@@ -313,15 +334,17 @@ else {
 			    if ($vDebug -eq 1) { sendMsg -a 1 -b 3027 }
                 sendMsg -c "${vTabela}, ${vTabelaAux}_bkp]"
                 finalizaErro
-                Break
+                Throw "ERR:GPDXR013"
             }
 		} catch {
             if ($vDebug -eq 1) {
 		        sendMsg -a 1 -b 3013
                 sendMsg -c "Exception Type: $($_.Exception.GetType().FullName)"
 			    sendMsg -c "Exception Type: $($_.Exception.GetType().FullName)"
+				Throw "ERR:GPDXR014"
 		    } else {
                 sendMsg -a 1 -b 3013
+				Throw "ERR:GPDXR015"
             }
         }
         if ($vDebug -eq 1) { sendMsg -a 1 -b 3028 }
@@ -341,15 +364,17 @@ else {
 				    if ($vDebug -eq 1) { sendMsg -a 1 -b 3030 }
 				    sendMsg -c "${vDBSchm}.${vTabela}_bkp, ${vWrkSchema}"
                     finalizaErro
-                    Break
+                    Throw "ERR:GPDXR016"
                 }
 			} catch {
                 if ($vDebug -eq 1) {
 		            sendMsg -a 1 -b 3013
                     sendMsg -c "Exception Type: $($_.Exception.GetType().FullName)"
 			        sendMsg -c "Exception Type: $($_.Exception.GetType().FullName)"
+					Throw "ERR:GPDXR017"
 		        } else {
                     sendMsg -a 1 -b 3013
+					Throw "ERR:GPDXR018"
                 }
             }
 			if ($vDebug -eq 1) { sendMsg -a 1 -b 3031 }
@@ -368,15 +393,17 @@ else {
             if ($vChkErr) {
                 if ($vDebug -eq 1) { sendMsg -a 1 -b 3033 }
                 finalizaErro
-                Break
+                Throw "ERR:GPDXR019"
             }
         } catch {
                 if ($vDebug -eq 1) {
 		            sendMsg -a 1 -b 3013
                     sendMsg -c "Exception Type: $($_.Exception.GetType().FullName)"
 			        sendMsg -c "Exception Type: $($_.Exception.GetType().FullName)"
+					Throw "ERR:GPDXR020"
 		        } else {
                     sendMsg -a 1 -b 3013
+					Throw "ERR:GPDXR021"
                 }
             }
         if ($vDebug -eq 1) { sendMsg -a 1 -b 3034  }
@@ -386,24 +413,26 @@ else {
         if ($vDBSchm -ne $vWrkSchema) {
 		try {
             if ($vDebug -eq 1) { sendMsg -a 1 -b 3035  }
-            "alter table ${vWrkSchema}.${vTabela}_new set schema ${vDBSchm}" | Set-Content alter2.sql
+            "alter table ${vWrkSchema}.${vTabela} set schema ${vDBSchm}" | Set-Content alter2.sql
             $vTranscriptFile = "${vCurrentdir}cmd.log"
             Start-Transcript -Path $vTranscriptFile
             cmd /c $cmdPsql -f alter2.sql -t
             Stop-Transcript
-            $vChkErr = Select -String cmd.log -Pattern ERROR -Quiet -SimpleMatch -CaseSensitive
+            $vChkErr = Select-String cmd.log -Pattern ERROR -Quiet -SimpleMatch -CaseSensitive
             if ($vChkErr) {
                 if ($vDebug -eq 1) { sendMsg -a 1 -b 3036  }
                 finalizaErro
-                Break
+                Throw "ERR:GPDXR022"
             }
 		} catch {
                 if ($vDebug -eq 1) {
 		            sendMsg -a 1 -b 3013
                     sendMsg -c "Exception Type: $($_.Exception.GetType().FullName)"
 			        sendMsg -c "Exception Type: $($_.Exception.GetType().FullName)"
+					Throw "ERR:GPDXR022"
 		        } else {
                     sendMsg -a 1 -b 3013
+					Throw "ERR:GPDXR022"
                 }
         }
         if ($vDebug -eq 1) { sendMsg -a 1 -b 3037  }
@@ -422,6 +451,3 @@ else {
 #
 # Encerramento
 finalizaSucesso
-
-
-
